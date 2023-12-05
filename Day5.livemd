@@ -1,0 +1,151 @@
+# Day 5
+
+```elixir
+Mix.install([
+  {:nimble_parsec, "~> 1.4"},
+  {:kino_aoc, "~> 0.1.5"}
+])
+```
+
+## Input
+
+<!-- livebook:{"attrs":{"assign_to":"puzzle_input","day":"5","session_secret":"AOC_SESSION","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle("2023", "5", System.fetch_env!("LB_AOC_SESSION"))
+```
+
+```elixir
+defmodule Parser do
+  import NimbleParsec
+
+  almanac_seeds =
+    wrap(
+      ignore(string("seeds:"))
+      |> repeat(ignore(string(" ")) |> integer(min: 1))
+      |> repeat(ignore(ascii_char([?\n])))
+    )
+
+  category =
+    ascii_string([?a..?z], min: 1) |> map({String, :to_atom, []})
+
+  ranges =
+    wrap(
+      integer(min: 1)
+      |> ignore(ascii_char([?\s]))
+      |> integer(min: 1)
+      |> ignore(ascii_char([?\s]))
+      |> integer(min: 1)
+      |> ignore(optional(ascii_char([?\n])))
+    )
+    |> map(:to_ranges)
+
+  almanac_map =
+    wrap(
+      unwrap_and_tag(category, :from)
+      |> ignore(string("-to-"))
+      |> unwrap_and_tag(category, :to)
+      |> ignore(string(" map:\n"))
+      |> map(tag(repeat(ranges), :maps), :sort_maps)
+      |> ignore(optional(ascii_char([?\n])))
+    )
+    |> map(:map_by_src)
+
+  defparsec(:almanac, almanac_seeds |> concat(repeat(almanac_map)))
+
+  def to_ranges([dst, src, len]) do
+    {src..(src + len - 1), dst..(dst + len - 1)}
+  end
+
+  def sort_maps({:maps, maps}) do
+    {:maps, Enum.sort_by(maps, &elem(&1, 0))}
+  end
+
+  def map_by_src(m) do
+    Map.new(m) |> Map.pop!(:from)
+  end
+end
+
+[:ok, [seeds | mappings] | _] = Parser.almanac(puzzle_input) |> Tuple.to_list()
+
+mappings = Map.new(mappings)
+```
+
+```elixir
+defmodule Mappings do
+  def map_to(_, {nil, _}, _), do: :err
+  def map_to(_, {category, n}, target) when category == target, do: {target, n}
+
+  def map_to(mappings, {category, n}, target_category) do
+    %{maps: maps, to: next_cat} = mappings[category]
+
+    next =
+      Enum.find_value(maps, n, fn {src_range, dst_range} ->
+        if n in src_range do
+          n - src_range.first + dst_range.first
+        end
+      end)
+
+    map_to(mappings, {next_cat, next}, target_category)
+  end
+end
+
+seeds
+|> Enum.map(&Mappings.map_to(mappings, {:seed, &1}, :location))
+|> Enum.min_by(&elem(&1, 1))
+```
+
+## Part 2
+
+```elixir
+defmodule RangeMappings do
+  def map_range(range, {src_range, dst_range} = _mapping) do
+    if Range.disjoint?(range, src_range) do
+      {[], [range]}
+    else
+      mapped_range =
+        max(range.first, src_range.first)..min(range.last, src_range.last)
+        |> Range.shift(dst_range.first - src_range.first)
+
+      unmapped_ranges =
+        [
+          if(range.first < src_range.first, do: range.first..(src_range.first - 1)),
+          if(src_range.last < range.last, do: (src_range.last + 1)..range.last)
+        ]
+        |> Enum.reject(&is_nil/1)
+
+      {[mapped_range], unmapped_ranges}
+    end
+  end
+
+  def map_ranges(ranges, mappings) do
+    mappings
+    |> Enum.reduce({[], ranges}, fn mapping, {mapped, unmapped} ->
+      Enum.reduce(unmapped, {mapped, []}, fn range, {m, u} ->
+        {n, v} = map_range(range, mapping)
+        {n ++ m, v ++ u}
+      end)
+    end)
+  end
+end
+
+seed_ranges =
+  seeds
+  |> Enum.chunk_every(2)
+  |> Enum.map(fn [start, len] -> start..(start + len - 1) end)
+
+{:location, locations} =
+  Stream.iterate({:seed, seed_ranges}, fn {category, ranges} ->
+    if Map.has_key?(mappings, category) do
+      %{maps: maps, to: next_category} = mappings[category]
+      {mapped, unmapped} = RangeMappings.map_ranges(ranges, maps)
+      {next_category, mapped ++ unmapped}
+    end
+  end)
+  |> Enum.find(&(elem(&1, 0) == :location))
+
+Enum.min(locations).first
+```
+
+<!-- livebook:{"offset":3702,"stamp":{"token":"XCP.RFaV3BDohjH__E87ysm4artMKW9bbmcQrXToh1eg2cTC1FrpJJDp7yTul9mlI7Z75IQK9l8pQf172WPxeSXTP4DGi9BMRN88nMcTiQ943XyL7OwKvo4","version":2}} -->
