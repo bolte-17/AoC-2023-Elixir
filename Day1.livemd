@@ -1,0 +1,65 @@
+# Day 1
+
+```elixir
+Mix.install([
+  {:kino_aoc, "~> 0.1.5"}
+])
+```
+
+## Input
+
+<!-- livebook:{"attrs":{"assign_to":"puzzle_input","day":"1","session_secret":"AOC_SESSION","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle("2023", "1", System.fetch_env!("LB_AOC_SESSION"))
+```
+
+## Part 1
+
+```elixir
+puzzle_input
+|> String.split("\n")
+|> Enum.map(&Regex.replace(~r/\D/, &1, ""))
+|> Enum.map(&String.to_integer(String.at(&1, 0) <> String.at(&1, -1)))
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+defmodule CalibrationCode do
+  @digits %{
+    "one" => 1,
+    "two" => 2,
+    "three" => 3,
+    "four" => 4,
+    "five" => 5,
+    "six" => 6,
+    "seven" => 7,
+    "eight" => 8,
+    "nine" => 9
+  }
+  @reverse_digits @digits |> Enum.map(fn {k, v} -> {String.reverse(k), v} end) |> Map.new()
+
+  def starting_digit(<<d::utf8>> <> _rest, _) when d in ?1..?9, do: d - 48
+
+  def starting_digit(str, digits) do
+    digits |> Enum.find_value(fn {k, v} -> if(String.starts_with?(str, k), do: v) end)
+  end
+
+  def first_digit(str, digits \\ @digits) do
+    starting_digit(str, digits) || String.slice(str, 1..-1) |> first_digit(digits)
+  end
+
+  def last_digit(str), do: first_digit(String.reverse(str), @reverse_digits)
+
+  def parse(str), do: 10 * first_digit(str) + last_digit(str)
+end
+
+lines
+|> Enum.map(&CalibrationCode.parse/1)
+|> Enum.sum()
+```
+
+<!-- livebook:{"offset":1434,"stamp":{"token":"XCP.SNAv0Pd4zcdyHTdjnsxxnEXqMPDFzCPe3QMq2-E7LAWx1MPPPfiwXYoxXaba2D_dgGS5ED26S-mCcoo3gl00bl1izNA2OzJ7B0Hr574BlYeN7L_Pk0U","version":2}} -->

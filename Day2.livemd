@@ -1,0 +1,69 @@
+# Day 2
+
+```elixir
+Mix.install([
+  {:kino_aoc, "~> 0.1.5"}
+])
+```
+
+## Input
+
+<!-- livebook:{"attrs":{"assign_to":"puzzle_input","day":"2","session_secret":"AOC_SESSION","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle("2023", "2", System.fetch_env!("LB_AOC_SESSION"))
+```
+
+```elixir
+lines = String.split(puzzle_input, "\n")
+
+games =
+  Enum.map(lines, fn line ->
+    line
+    |> String.split(": ")
+    |> Enum.at(1)
+    |> String.split("; ")
+    |> Enum.map(fn s ->
+      String.split(s, ", ")
+      |> Enum.map(fn x ->
+        [n, c] = String.split(x)
+        {String.to_atom(c), String.to_integer(n)}
+      end)
+      |> Map.new()
+    end)
+  end)
+```
+
+## Part 1
+
+```elixir
+limits = %{red: 12, green: 13, blue: 14}
+
+games
+|> Enum.with_index(1)
+|> Enum.filter(fn {g, _i} ->
+  Enum.all?(g, fn d ->
+    Enum.all?(d, fn {c, n} ->
+      n <= limits[c]
+    end)
+  end)
+end)
+|> Enum.map(&elem(&1, 1))
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+games
+|> Enum.map(fn g ->
+  g
+  |> Enum.reduce(&Map.merge(&1, &2, fn _k, v1, v2 -> max(v1, v2) end))
+  |> Enum.map(&elem(&1, 1))
+  |> Enum.reduce(&(&1 * &2))
+end)
+|> Enum.sum()
+```
+
+<!-- livebook:{"offset":1225,"stamp":{"token":"XCP.BwPmynqRKLH996HVOBe2aFkXK7je60bFThTJE0JKeGbeNo3Mz7Ie9ZgXmFRQlEfQYYhASVfsG5uNDmTQq2-PTcOWaCBW1p4aldRXLRH9rJMnKjVVSvE","version":2}} -->

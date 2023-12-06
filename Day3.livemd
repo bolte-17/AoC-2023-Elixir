@@ -1,0 +1,71 @@
+# Day 3
+
+```elixir
+Mix.install([
+  {:kino_aoc, "~> 0.1.5"}
+])
+```
+
+## Input
+
+<!-- livebook:{"attrs":{"assign_to":"puzzle_input","day":"3","session_secret":"AOC_SESSION","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle("2023", "3", System.fetch_env!("LB_AOC_SESSION"))
+```
+
+```elixir
+lines = puzzle_input |> String.split("\n")
+```
+
+## Part 1
+
+```elixir
+symbols =
+  lines
+  |> Enum.with_index()
+  |> Enum.flat_map(fn {l, y} ->
+    Regex.scan(~r/[^\d.]/, l, return: :index)
+    |> Enum.map(fn [{x, _}] -> {{y, x}, String.at(l, x)} end)
+  end)
+  |> Map.new()
+
+number_positions =
+  lines
+  |> Enum.with_index()
+  |> Enum.flat_map(fn {l, y} ->
+    Regex.scan(~r/\d+/, l, return: :index)
+    |> Enum.map(fn [{x, l}] -> {{y, x}, l} end)
+  end)
+  |> Map.new()
+
+number_positions
+|> Enum.filter(fn {{y, x}, l} ->
+  Enum.any?(for dy <- -1..1, dx <- -1..l, do: symbols[{y + dy, x + dx}])
+end)
+|> Enum.map(fn {{y, x}, l} ->
+  Enum.at(lines, y) |> String.slice(x, l) |> String.to_integer()
+end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+adjacent_symbol_positions =
+  number_positions
+  |> Enum.flat_map(fn {{y, x}, l} ->
+    for dy <- -1..1,
+        dx <- -1..l,
+        pos = {y + dy, x + dx},
+        symbols[pos] == "*",
+        do: {pos, Enum.at(lines, y) |> String.slice(x, l) |> String.to_integer()}
+  end)
+  |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+  |> Enum.filter(fn {_, n} -> Enum.count(n) == 2 end)
+  |> Enum.map(fn {_, [a, b]} -> a * b end)
+  |> Enum.sum()
+```
+
+<!-- livebook:{"offset":1570,"stamp":{"token":"XCP.fBD-FQszRDYbzNx2cOUF2B5arW-45TZkGHdNOme9Pi1stfugDXOY307X4B1mDrCelHVrQdkSWqP3QCVU0bSuVM7WBVHRDCaxVRmIkIwn_LpaLi5qPrg","version":2}} -->
