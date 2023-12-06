@@ -1,0 +1,56 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Day 6
+
+## Part 1
+
+```elixir
+races =
+  [62, 64, 91, 90]
+  |> Enum.zip([553, 1010, 1473, 1074])
+
+example = [{7, 9}, {15, 40}, {30, 200}]
+
+races
+|> Enum.map(fn {time, distance} ->
+  Enum.count(0..time, &(&1 * (time - &1) > distance))
+end)
+|> Enum.product()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+840336
+```
+
+## Part 2
+
+```elixir
+time = 62_649_190
+dist = 553_101_014_731_074
+
+# how many n such that n * (62649190 - n) > 553101014731074
+# we could do some algebra and find zeroes but...
+
+minTime = 0..time |> Enum.find(&(&1 * (time - &1) > dist))
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+10633311
+```
+
+```elixir
+maxTime = time - minTime
+minTime..maxTime |> Enum.count()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+41382569
+```
+
+<!-- livebook:{"offset":776,"stamp":{"token":"XCP.9IOvE43WKr4BUVVV_BHPAY-V7ALMfL3MxMblbvw7lAHXo5_Vcyj3AdkoAlG8li1am4k_KfKVleKzsMZhQifE9bgActG1R_JLvHoz-HRv_367TFaiYTc","version":2}} -->
