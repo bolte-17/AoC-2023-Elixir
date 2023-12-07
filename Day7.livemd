@@ -1,0 +1,105 @@
+# Day 7
+
+```elixir
+Mix.install([
+  {:kino_aoc, "~> 0.1.5"},
+  {:nimble_parsec, "~> 1.4"}
+])
+```
+
+## Part 1
+
+<!-- livebook:{"attrs":{"assign_to":"puzzle_input","day":"7","session_secret":"AOC_SESSION","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle("2023", "7", System.fetch_env!("LB_AOC_SESSION"))
+```
+
+```elixir
+puzzle_input
+|> String.split("\n")
+|> Enum.map(&String.split(&1, " "))
+|> Enum.map(fn [hand, bid] ->
+  hand =
+    hand
+    |> String.graphemes()
+    |> Enum.map(fn
+      "T" -> 10
+      "J" -> 11
+      "Q" -> 12
+      "K" -> 13
+      "A" -> 14
+      i -> String.to_integer(i)
+    end)
+
+  hand_sets =
+    hand
+    |> Enum.group_by(& &1)
+    |> Enum.map(fn {k, g} -> {Enum.count(g), k} end)
+    |> Enum.sort(:desc)
+    |> Enum.map(&elem(&1, 0))
+
+  {hand_sets, hand, String.to_integer(bid)}
+end)
+|> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)})
+|> Enum.with_index(1)
+|> Enum.map(fn {{_, _, bid}, rank} -> bid * rank end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+puzzle_input
+|> String.split("\n")
+|> Enum.map(&String.split(&1, " "))
+|> Enum.map(fn [hand, bid] ->
+  hand =
+    hand
+    |> String.graphemes()
+    |> Enum.map(fn
+      "T" -> 10
+      "J" -> 1
+      "Q" -> 12
+      "K" -> 13
+      "A" -> 14
+      i -> String.to_integer(i)
+    end)
+
+  {jokers, hand_sets} =
+    hand
+    |> Enum.group_by(& &1)
+    |> Enum.map(fn {k, g} -> {Enum.count(g), k} end)
+    |> Enum.sort(:desc)
+    |> Enum.split_with(fn {_, card} -> card == 1 end)
+
+  {most, best_card} = Enum.at(hand_sets, 0, {0, 1})
+
+  rest =
+    if Enum.empty?(hand_sets) do
+      []
+    else
+      tl(hand_sets)
+    end
+
+  hand_sets =
+    [{most + (jokers |> Enum.at(0, {0, 1}) |> elem(0)), best_card} | rest]
+    |> Enum.map(&elem(&1, 0))
+
+  {hand_sets, hand, String.to_integer(bid)}
+end)
+|> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)})
+|> Enum.with_index(1)
+|> Enum.map(fn {{_, _, bid}, rank} -> bid * rank end)
+|> Enum.sum()
+```
+
+```elixir
+String.codepoints("AAJ99")
+|> Enum.group_by(& &1)
+|> Enum.map(fn {k, g} -> {Enum.count(g), k} end)
+|> Enum.sort(:desc)
+```
+
+<!-- livebook:{"offset":2139,"stamp":{"token":"XCP.qbyL_PsDVWlpxqVKexdpK4xEYfOmMLgmwEhGof1waASjs8qf-7oQtL0-7l2MtskhyF8aAbryxEWHrqzWuLBWkboEQOl05511EpiwXZJZwRTXJksXBA8","version":2}} -->
