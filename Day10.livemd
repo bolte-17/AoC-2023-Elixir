@@ -90,6 +90,8 @@ path
 6864
 ```
 
+## Part 2
+
 ```elixir
 defmodule Point do
   def neighbors({x, y}) do
@@ -140,10 +142,10 @@ interior_points =
 
 for y <- 0..139 do
   for x <- 0..140 do
-    if MapSet.member?(interior_points, {x, y}) do
+    if {x, y} in interior_points do
       "░"
     else
-      if MapSet.member?(path_points, {x, y}) || {x, y} == start_pos do
+      if {x, y} in path_points || {x, y} == start_pos do
         case Grid.at(grid, {x, y}) do
           ?| -> "│"
           ?- -> "─"
@@ -316,4 +318,43 @@ MapSet.size(interior_points)
 349
 ```
 
-<!-- livebook:{"offset":55511,"stamp":{"token":"XCP.CUDkmL5fRHBnyS8z4sJwMv3axwdf7HOrzD0OtNeT2V7x6Gjo7fYQKuutb-ywPwk9l5kH2XEy4w6o3gJcQRV8NMFVUGSd9sxcLoOOuJlnYVQUWhIaXx4","version":2}} -->
+## Scanline Rasterizer Ver
+
+```elixir
+for y <- 0..139, x <- 0..139, reduce: {0, false} do
+  {count, inside?} ->
+    if {x, y} in path_points do
+      {count, if(Grid.at(grid, {x, y}) in [?L, ?J, ?|], do: not inside?, else: inside?)}
+    else
+      {count + if(inside?, do: 1, else: 0), inside?}
+    end
+end
+|> elem(0)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+349
+```
+
+```elixir
+path_indexes = MapSet.new(path_points, fn {x, y} -> 140 * y + x end)
+
+grid
+|> Enum.with_index()
+|> Enum.reduce([], fn {x, i}, idxs ->
+  inside = i - 1 == List.first(idxs)
+  inside = if i in path_indexes and x in [?L, ?J, ?|], do: not inside, else: inside
+  if inside, do: [i | idxs], else: idxs
+end)
+|> Enum.count(&(&1 not in path_indexes))
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+349
+```
+
+<!-- livebook:{"offset":56269,"stamp":{"token":"XCP.YMs-ztRvNj4pwsZn93g0LDSUPNdL-P-DLEMdEZAD1Cm27piXGShHph9JqyfLOTWt_-3N6NLJjTZ1yiYRBqaeQHqzaLJEHWBNvCO_YKB_LQ2kVOdIwJo","version":2}} -->
