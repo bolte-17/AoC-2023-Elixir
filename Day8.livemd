@@ -1,0 +1,96 @@
+# Day 8
+
+```elixir
+Mix.install([
+  {:kino_aoc, "~> 0.1.5"},
+  {:math, "~> 0.7.0"}
+])
+```
+
+## Untitled
+
+<!-- livebook:{"attrs":{"assign_to":"puzzle_input","day":"8","session_secret":"AOC_SESSION","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle("2023", "8", System.fetch_env!("LB_AOC_SESSION"))
+```
+
+```elixir
+[leftrights, network] = String.split(puzzle_input, "\n\n")
+
+network =
+  network
+  |> String.split("\n")
+  |> Map.new(fn l ->
+    [node, left, right] =
+      [0..2, 7..9, 12..14]
+      |> Enum.map(&String.slice(l, &1))
+
+    {node, {left, right}}
+  end)
+
+leftrights =
+  leftrights
+  |> String.to_charlist()
+  |> Enum.map(fn
+    ?L -> 0
+    ?R -> 1
+  end)
+```
+
+## Part 1
+
+```elixir
+distance_to_zzz =
+  leftrights
+  |> Stream.cycle()
+  |> Stream.scan("AAA", fn lr, node -> network[node] |> elem(lr) end)
+  |> Stream.take_while(&(&1 != "ZZZ"))
+  |> Enum.count()
+  |> (&(&1 + 1)).()
+```
+
+```elixir
+rem(distance_to_zzz, Enum.count(leftrights))
+```
+
+## Part 2
+
+```elixir
+defmodule Network do
+  def step(network, node, lr) do
+    network[node] |> elem(lr)
+  end
+
+  def follow_path(network, start_node, turns) do
+    [start_node | turns |> Enum.scan(start_node, fn lr, node -> step(network, node, lr) end)]
+  end
+
+  def end_of_path(network, start_node, turns) do
+    turns
+    |> Enum.reduce(start_node, fn lr, node -> step(network, node, lr) end)
+  end
+end
+
+nexts =
+  network
+  |> Map.keys()
+  |> Map.new(&{&1, Network.end_of_path(network, &1, leftrights)})
+
+starts =
+  Map.keys(nexts)
+  |> Enum.filter(&String.ends_with?(&1, "A"))
+
+loop_counts =
+  Enum.map(starts, fn node ->
+    Stream.iterate(node, &nexts[&1])
+    |> Enum.find_index(&String.ends_with?(&1, "Z"))
+  end)
+  |> IO.inspect(charlists: :as_list)
+
+# This _really_ shouldn't work for the general case but the problem is conveniently structured
+Enum.product(loop_counts) * Enum.count(leftrights)
+```
+
+<!-- livebook:{"offset":1971,"stamp":{"token":"XCP.2MiPUq57q_xwArbk4oUduUAhueZoiB1V1mXhlQgQt9dIILE8ie67DAw8g_eY8qmkKwxW6xXzyeaaOD_KIFJ94PNZwnkrwU8G-lMaP_faRj_mE23zOYI","version":2}} -->

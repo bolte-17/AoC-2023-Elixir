@@ -1,0 +1,71 @@
+# Day 9
+
+```elixir
+Mix.install([
+  {:kino_aoc, "~> 0.1.5"}
+])
+```
+
+## Input
+
+<!-- livebook:{"attrs":{"assign_to":"puzzle_input","day":"9","session_secret":"AOC_SESSION","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, puzzle_input} =
+  KinoAOC.download_puzzle("2023", "9", System.fetch_env!("LB_AOC_SESSION"))
+```
+
+```elixir
+sequences =
+  puzzle_input
+  |> String.split("\n")
+  |> Enum.map(fn ln -> String.split(ln) |> Enum.map(&String.to_integer/1) end)
+
+sequences
+|> Enum.map(fn s ->
+  s
+  |> Stream.unfold(fn seq ->
+    if Enum.all?(seq, &(&1 == 0)) do
+      nil
+    else
+      next =
+        seq
+        |> Enum.chunk_every(2, 1, :discard)
+        |> Enum.map(fn [a, b] -> b - a end)
+
+      {seq, next}
+    end
+  end)
+  |> Enum.map(&List.last/1)
+  |> Enum.sum()
+end)
+|> Enum.sum()
+```
+
+```elixir
+sequences
+|> Enum.map(fn s ->
+  s
+  |> Stream.unfold(fn seq ->
+    if Enum.all?(seq, &(&1 == 0)) do
+      nil
+    else
+      next =
+        seq
+        |> Enum.chunk_every(2, 1, :discard)
+        |> Enum.map(fn [a, b] -> b - a end)
+
+      {seq, next}
+    end
+  end)
+  # Part 1 version:
+  # |> Enum.map(&List.last/1)
+  # |> Enum.sum()
+  |> Enum.map(&hd/1)
+  |> Enum.reverse()
+  |> Enum.reduce(&(&1 - &2))
+end)
+|> Enum.sum()
+```
+
+<!-- livebook:{"offset":1295,"stamp":{"token":"XCP.4GmqatniU14A-NMqUaBYXJF1p_9Zwo5foHbuugEoUf0zP89s4pRC-H5JPgpCDKDlSJePn7lFFUc3Eeh7OjOIXDzwfwapiij64rOmjwvTFvn28kdssdM","version":2}} -->
